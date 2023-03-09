@@ -15,5 +15,4 @@ for (const file of files) {
   parser.parseScript(script);
 }
 
-console.log("Parsed experiments:");
-console.log(parser.experiments);
+console.log(JSON.stringify(parser.experiments, null, 2));

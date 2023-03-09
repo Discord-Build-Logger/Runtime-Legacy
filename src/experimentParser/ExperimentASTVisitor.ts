@@ -1,4 +1,5 @@
 import { Node } from "acorn";
+import Experiment from "../models/Experiment";
 import { ASTVisitor } from "../util/ast/ASTVisitor";
 import ExperimentParser from "./ExperimentParser";
 
@@ -20,10 +21,24 @@ function hasProperty(node: any, name: string) {
   });
 }
 
+function isEnumExpression(node: any) {
+  if (node.type !== "MemberExpression") {
+    return false;
+  }
+
+  if (node.object.type === "MemberExpression" && !node.computed) {
+    return isEnumExpression(node.object);
+  } else if (node.object.type === "Identifier" && !node.computed) {
+    return node.property.type === "Identifier";
+  }
+
+  return false;
+}
+
 /**
  * Serializes an AST node to a JS value.
  */
-function astToJSValue(node: any) {
+function astToJSValue(script: string, node: any) {
   if (node.type === "Literal") {
     return node.value;
   } else if (node.type === "ObjectExpression") {
@@ -33,21 +48,34 @@ function astToJSValue(node: any) {
       if (!prop.key) continue;
 
       if (prop.key.type === "Identifier") {
-        obj[prop.key.name] = astToJSValue(prop.value);
+        obj[prop.key.name] = astToJSValue(script, prop.value);
       } else if (prop.key.type === "Literal") {
-        obj[prop.key.value] = astToJSValue(prop.value);
+        obj[prop.key.value] = astToJSValue(script, prop.value);
       }
     }
 
     return obj;
   } else if (node.type === "ArrayExpression") {
-    return node.elements.map(astToJSValue);
+    return node.elements.map((elem: any) => astToJSValue(script, elem));
   } else if (node.type === "UnaryExpression" && node.operator === "!") {
-    const value = astToJSValue(node.argument);
-    return value === 0 ? true : value === 1 ? false : undefined;
-  } else {
+    const value = astToJSValue(script, node.argument);
+    if (typeof value === "number") {
+      if (value === 0) {
+        return true;
+      } else if (value === 1) {
+        return false;
+      }
+    }
+  } else if (isEnumExpression(node)) {
+    return node.property.name;
+  }
+
+  // if we can't serialize it, let's return raw JS code as string otherwise for now
+  if (node.start === undefined || node.end === undefined) {
     return undefined;
   }
+
+  return script.substring(node.start, node.end);
 }
 
 const experimentProperties = ["kind", "id", "label"];
@@ -60,15 +88,24 @@ function isExperiment(node: any) {
   return experimentProperties.every((property) => hasProperty(node, property));
 }
 
-class ExperimentASTVisitor extends ASTVisitor<ExperimentParser> {
-  ObjectExpression(node: Node, parser: ExperimentParser) {
+class ExperimentASTVisitor extends ASTVisitor<[string, ExperimentParser]> {
+  ObjectExpression(node: Node, state: [string, ExperimentParser]) {
     if (!isExperiment(node)) {
       return;
     }
 
-    const serialized = astToJSValue(node);
+    const [script, parser] = state;
 
-    console.log("Found experiment:", serialized);
+    const serialized = astToJSValue(script, node);
+    const experiment: Experiment = {
+      kind: serialized.kind,
+      id: serialized.id,
+      label: serialized.label,
+      treatments: serialized.treatments || [],
+      defaultConfig: serialized.defaultConfig,
+    };
+
+    parser.addExperiment(experiment);
   }
 }
 

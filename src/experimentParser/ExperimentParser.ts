@@ -1,5 +1,4 @@
 import acorn from "acorn";
-import * as walk from "acorn-walk";
 import Experiment from "../models/Experiment";
 import ExperimentASTVisitor from "./ExperimentASTVisitor";
 
@@ -25,23 +24,20 @@ class ExperimentParser {
 
   /**
    * Parses a script and adds all found experiments to ExperimentParser.experiments.
-   * @param script The script to parse. Accepts either code as a string or parsed AST as an object.
+   * @param script The script to parse, in form of JavaScript code.
    */
-  parseScript(script: string | acorn.Node) {
-    if (typeof script === "string") {
-      const ast = acorn.parse(script, this.acornOptions);
-      return this.parseAST(ast);
-    } else if (typeof script === "object") {
-      return this.parseAST(script);
-    } else {
-      throw new Error(
-        `Invalid script passed. Expected string or object, got ${typeof script}`
-      );
-    }
+  parseScript(script: string) {
+    const ast = acorn.parse(script, this.acornOptions);
+    new ExperimentASTVisitor().walk(ast, [script, this]);
   }
 
-  parseAST(ast: acorn.Node) {
-    new ExperimentASTVisitor().walk(ast, this);
+  addExperiment(experiment: Experiment) {
+    const existing = this.experiments.find((exp) => exp.id === experiment.id);
+    if (existing) {
+      return;
+    }
+
+    this.experiments.push(experiment);
   }
 }
 
