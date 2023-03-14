@@ -9,6 +9,10 @@ class Build {
 
   public date: Date;
 
+  public releaseChannel: ReleaseChannel;
+
+  public buildEnv: BuildEnv;
+
   /** Build Override metadata. No override applied if null. */
   public buildOverride: BuildOverrideMeta | null;
   /** This may not be present on every build with an override!!! */
@@ -26,21 +30,21 @@ export default Build;
 /** Release Channels is the name discord uses for the "Branch" of a build. */
 export enum ReleaseChannel {
   /* Public Release Channels */
-  CANARY = "canary",
-  PTB = "ptb",
-  STABLE = "stable",
+  CANARY = "CANARY",
+  PTB = "PTB",
+  STABLE = "STABLE",
   /** This is usually set for BuildEnv.DEVELOPMENT and BuildEnv.STAGING */
-  STAGING = "staging",
+  STAGING = "STAGING",
 }
 
 /** Build env is the environment it's running in. Canary/PTB/Stable are all Production. */
 export enum BuildEnv {
   /** Production Discord, aka *.discord.com */
-  PRODUCTION = "production",
+  PRODUCTION = "PRODUCTION",
   /** Development Discord, aka localhost */
-  DEVELOPMENT = "development",
+  DEVELOPMENT = "DEVELOPMENT",
   /** Staging Discord, aka *.discord.co */
-  STAGING = "staging",
+  STAGING = "STAGING",
 }
 
 export interface BuildOverride {

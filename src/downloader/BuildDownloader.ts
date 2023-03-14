@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import cluster from "node:worker_threads";
 import { Domains, Paths, Regexes } from "../Constants";
-import Build, { ReleaseChannel } from "../models/Build";
+import Build, { BuildEnv, ReleaseChannel } from "../models/Build";
 import File from "../models/File";
 import PromiseQueue from "./PromiseQueue";
 
@@ -50,17 +50,39 @@ class BuildDownloader {
     });
   }
 
-  async start(): Promise<Build> {
+  async start(rootinfo?: {
+    id: string;
+    date: string;
+    files: string[];
+  }): Promise<Build> {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
 
     const build = new Build();
 
-    const { files: rootFiles, date, id } = await this.getRootInfo();
+    build.releaseChannel = this.releaseChannel;
+
+    switch (this.releaseChannel) {
+      case ReleaseChannel.CANARY:
+      case ReleaseChannel.PTB:
+      case ReleaseChannel.STABLE:
+        build.buildEnv = BuildEnv.PRODUCTION;
+        break;
+      case ReleaseChannel.STAGING:
+        build.buildEnv = BuildEnv.STAGING;
+        break;
+    }
+
+    const {
+      files: rootFiles,
+      date,
+      id,
+    } = rootinfo ?? (await this.getRootInfo());
+
     build.id = id;
     build.date = new Date(date);
 
-    console.log(`[Downloader Main] Threads: ${this.maxThreads}`);
-    console.log(`[Downloader Main] Root Files: ${rootFiles.length}`);
+    // console.log(`[Downloader Main] Threads: ${this.maxThreads}`);
+    // console.log(`[Downloader Main] Root Files: ${rootFiles.length}`);
 
     for (const file of rootFiles) {
       this.downloadQueue.add(() => this.download(file));
@@ -78,7 +100,7 @@ class BuildDownloader {
 
   async process(files: string[]): Promise<File[]> {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
-    console.log(`[Downloader Main] Processing ${files.length} files...`);
+    // console.log(`[Downloader Main] Processing ${files.length} files...`);
 
     const results: File[] = [];
 

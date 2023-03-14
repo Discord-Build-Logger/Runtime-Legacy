@@ -108,7 +108,7 @@ if (!parentPort) {
 parentPort.on("message", async (param) => {
   if (typeof param !== "object") return;
   if (!param.fileName || !param.fileMeta) return;
-  console.log(`[Worker ${cluster.threadId}] => ${param.fileName}`);
+  // console.log(`[Worker ${cluster.threadId}] => ${param.fileName}`);
 
   const file = handle(param.fileName, param.fileMeta);
 

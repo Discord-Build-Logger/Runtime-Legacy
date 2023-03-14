@@ -7,10 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ReleaseChannel {
+  CANARY
+  PTB
+  STABLE
+  STAGING
+}
+
+enum BuildEnv {
+  PRODUCTION
+  DEVELOPMENT
+  STAGING
+}
+
 model Build {
-  id     String   @id
+  id   String   @id
   // Build date
-  date   DateTime
+  date DateTime
+
+  releaseChannel ReleaseChannel
+  buildEnv       BuildEnv
+
   // JS/Stylesheets
   files  File[]
   // Misc assets (images, videos, etc.)
