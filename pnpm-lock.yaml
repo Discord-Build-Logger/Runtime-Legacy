@@ -6,6 +6,7 @@ specifiers:
   acorn-walk: ^8.2.0
   esno: ^0.16.3
   node-worker-threads-pool: ^1.5.1
+  prisma: ^4.11.0
   typescript: ^4.9.5
 
 dependencies:
@@ -16,6 +17,7 @@ dependencies:
 devDependencies:
   '@types/node': 18.14.6
   esno: 0.16.3
+  prisma: 4.11.0
   typescript: 4.9.5
 
 packages:
@@ -239,6 +241,11 @@ packages:
     dev: true
     optional: true
 
+  /@prisma/engines/4.11.0:
+    resolution: {integrity: sha512-0AEBi2HXGV02cf6ASsBPhfsVIbVSDC9nbQed4iiY5eHttW9ZtMxHThuKZE1pnESbr8HRdgmFSa/Kn4OSNYuibg==}
+    requiresBuild: true
+    dev: true
+
   /@types/node/18.14.6:
     resolution: {integrity: sha512-93+VvleD3mXwlLI/xASjw0FzKcwzl3OdTCzm1LaRfqgS21gfFtK3zDXM5Op9TeeMsJVOaJ2VRDpT9q4Y3d0AvA==}
     dev: true
@@ -307,6 +314,15 @@ packages:
   /node-worker-threads-pool/1.5.1:
     resolution: {integrity: sha512-7TXAhpMm+jO4MfESxYLtMGSnJWv+itdNHMdaFmeZuPXxwFGU90mtEB42BciUULXOUAxYBfXILAuvrSG3rQZ7mw==}
     dev: false
+
+  /prisma/4.11.0:
+    resolution: {integrity: sha512-4zZmBXssPUEiX+GeL0MUq/Yyie4ltiKmGu7jCJFnYMamNrrulTBc+D+QwAQSJ01tyzeGHlD13kOnqPwRipnlNw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+    requiresBuild: true
+    dependencies:
+      '@prisma/engines': 4.11.0
+    dev: true
 
   /source-map-support/0.5.21:
     resolution: {integrity: sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==}

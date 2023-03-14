@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Build {
+  id     String   @id
+  // Build date
+  date   DateTime
+  // JS/Stylesheets
+  files  File[]
+  // Misc assets (images, videos, etc.)
+  assets String[]
+}
+
+model File {
+  // filename
+  name            String   @id
+  // list of builds that use this file
+  builds          Build[]
+  // list of tags that this file has
+  tags            String[]
+  // date the file was last modified
+  date            DateTime
+  // list of referenced files
+  referencedFiles String[]
+  // list of experiments in this file
+  experiments     Json[] // TODO: Should this be it's own model?
+}
