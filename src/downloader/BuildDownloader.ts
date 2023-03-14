@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import cluster from "node:worker_threads";
 import { Domains, Paths, Regexes } from "../Constants";
-import { ReleaseChannel } from "../models/Build";
+import Build, { ReleaseChannel } from "../models/Build";
 import File from "../models/File";
 import PromiseQueue from "./PromiseQueue";
 
@@ -50,21 +50,30 @@ class BuildDownloader {
     });
   }
 
-  async start(): Promise<File[]> {
+  async start(): Promise<Build> {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
 
-    const assets = await this.getRootFiles();
+    const build = new Build();
+
+    const { files: rootFiles, date, id } = await this.getRootInfo();
+    build.id = id;
+    build.date = new Date(date);
 
     console.log(`[Downloader Main] Threads: ${this.maxThreads}`);
-    console.log(`[Downloader Main] Root Files: ${assets.length}`);
+    console.log(`[Downloader Main] Root Files: ${rootFiles.length}`);
 
-    for (const file of assets) {
+    for (const file of rootFiles) {
       this.downloadQueue.add(() => this.download(file));
     }
 
     await this.downloadQueue.awaitAll();
 
-    return await this.process(assets);
+    const files = await this.process(rootFiles);
+
+    build.files = files;
+    // TODO: Set build.assets
+
+    return build;
   }
 
   async process(files: string[]): Promise<File[]> {
@@ -110,10 +119,10 @@ class BuildDownloader {
     return results;
   }
 
-  async getRootFiles(): Promise<string[]> {
+  async getRootInfo(): Promise<{ id: string; date: string; files: string[] }> {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
 
-    const assets: string[] = [];
+    const files: string[] = [];
 
     const response = await fetch(`${Domains[this.releaseChannel]}${Paths.app}`);
 
@@ -126,15 +135,22 @@ class BuildDownloader {
     let asset: any;
     while ((asset = Regexes.htmlScripts.exec(body))) {
       if (!asset[1]) continue;
-      assets.push(asset[1]);
+      files.push(asset[1]);
     }
 
     while ((asset = Regexes.htmlStylesheets.exec(body))) {
       if (!asset[1]) continue;
-      assets.push(asset[1]);
+      files.push(asset[1]);
     }
 
-    return assets;
+    const id = response.headers.get("x-build-id") || "";
+    const date = response.headers.get("last-modified") || "";
+
+    return {
+      id,
+      date,
+      files,
+    };
   }
 
   async download(file: string, attempt = 0) {

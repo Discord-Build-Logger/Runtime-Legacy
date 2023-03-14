@@ -7,6 +7,8 @@ class Build {
    */
   public id: string;
 
+  public date: Date;
+
   /** Build Override metadata. No override applied if null. */
   public buildOverride: BuildOverrideMeta | null;
   /** This may not be present on every build with an override!!! */
