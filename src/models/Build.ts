@@ -1,3 +1,5 @@
+import File from "./File";
+
 class Build {
   /**
    * The Build ID is the hexadecimal hash of a build.
@@ -11,7 +13,7 @@ class Build {
   public buildOverrideUrl: string | null;
 
   /** List of file names */
-  public files: string[];
+  public files: File[];
 
   /** List of assets */
   public assets: string[];

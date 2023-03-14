@@ -1,6 +1,21 @@
+import { ReleaseChannel } from "./models/Build";
+
+export const Domains = {
+  [ReleaseChannel.STABLE]: "https://discord.com",
+  [ReleaseChannel.PTB]: "https://ptb.discord.com",
+  [ReleaseChannel.CANARY]: "https://canary.discord.com",
+  [ReleaseChannel.STAGING]: "https://staging.discord.co",
+};
+
+export const Paths = {
+  assets: "/assets",
+  app: "/app",
+  developers: "/developers",
+};
+
 export const Regexes = {
-  htmlScripts: /(?:<script\ssrc="\/assets\/([0-9a-f]{20}).js")/g,
-  htmlStylesheets: /(?:href="\/assets\/([.0-9a-f]{22}).css")/g,
+  htmlScripts: /(?:<script\ssrc="\/assets\/([0-9a-f]{20,30}\.js)")/g,
+  htmlStylesheets: /(?:href="\/assets\/([.0-9a-f]{20,30}\.css)")/g,
   htmlImages: /(?:url\(\/assets\/([a-f0-9]{32}\.(?:png|svg|jpe?g|woff))\))/g,
   wpLoaderModules: /({(?:[\de]+:"[0-9a-f]{20}",?\n?)+})(?:\[\w\]\+"\.js")/,
   resourceNames:

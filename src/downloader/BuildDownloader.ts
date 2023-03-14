@@ -2,6 +2,8 @@ import { StaticPool } from "node-worker-threads-pool";
 import os from "node:os";
 import path from "node:path";
 import cluster from "node:worker_threads";
+import { Domains, Paths, Regexes } from "../Constants";
+import { ReleaseChannel } from "../models/Build";
 import File from "../models/File";
 import PromiseQueue from "./PromiseQueue";
 
@@ -32,8 +34,7 @@ class BuildDownloader {
   private downloadResults: Record<string, FileMetadata> = {};
 
   constructor(
-    public assetsUrl: string,
-    public pendingFiles: string[] = [],
+    private releaseChannel: ReleaseChannel,
     config?: BuildDownloaderConfig
   ) {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
@@ -47,21 +48,23 @@ class BuildDownloader {
       size: this.maxThreads,
       task: path.join(__dirname, "Worker"),
     });
-
-    console.log(`[Downloader Main] Threads: ${this.maxThreads}`);
-    console.log(`[Downloader Main] Files: ${pendingFiles.length}`);
   }
 
   async start(): Promise<File[]> {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
 
-    for (const file of this.pendingFiles) {
+    const assets = await this.getRootFiles();
+
+    console.log(`[Downloader Main] Threads: ${this.maxThreads}`);
+    console.log(`[Downloader Main] Root Files: ${assets.length}`);
+
+    for (const file of assets) {
       this.downloadQueue.add(() => this.download(file));
     }
 
     await this.downloadQueue.awaitAll();
 
-    return await this.process(this.pendingFiles);
+    return await this.process(assets);
   }
 
   async process(files: string[]): Promise<File[]> {
@@ -107,12 +110,41 @@ class BuildDownloader {
     return results;
   }
 
+  async getRootFiles(): Promise<string[]> {
+    if (!cluster.isMainThread) throw new Error("Not main thread!");
+
+    const assets: string[] = [];
+
+    const response = await fetch(`${Domains[this.releaseChannel]}${Paths.app}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const body = await response.text();
+
+    let asset: any;
+    while ((asset = Regexes.htmlScripts.exec(body))) {
+      if (!asset[1]) continue;
+      assets.push(asset[1]);
+    }
+
+    while ((asset = Regexes.htmlStylesheets.exec(body))) {
+      if (!asset[1]) continue;
+      assets.push(asset[1]);
+    }
+
+    return assets;
+  }
+
   async download(file: string, attempt = 0) {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
     let response!: Response;
 
     try {
-      response = await fetch(`${this.assetsUrl}${file}`);
+      response = await fetch(
+        `${Domains[this.releaseChannel]}${Paths.assets}/${file}`
+      );
     } catch (e) {
       if (attempt < this.downloadRetryAttempts) {
         console.error(
