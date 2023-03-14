@@ -6,6 +6,7 @@ import {
   WebpackChunkChecks,
   WebpackVendorChecks,
 } from "../Constants";
+import ExperimentParser from "../experimentParser/ExperimentParser";
 import File, { FileTags } from "../models/File";
 import { FileMetadata } from "./BuildDownloader";
 
@@ -29,6 +30,12 @@ function handle(file: string, meta: FileMetadata): File | null {
       metadata: meta,
       tags: [FileTags.JavaScript],
     });
+
+    const experimentParser = new ExperimentParser();
+    experimentParser.parseScript(text);
+    if (experimentParser.experiments.length) {
+      newFile.experiments = experimentParser.experiments;
+    }
 
     // Detect webpack chunks
     if (WebpackChunkChecks.every((check) => text.includes(check))) {
