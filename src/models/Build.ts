@@ -23,6 +23,8 @@ class Build {
 
   /** List of assets */
   public assets: string[];
+
+  public globalEnv: Record<string, any>;
 }
 
 export default Build;

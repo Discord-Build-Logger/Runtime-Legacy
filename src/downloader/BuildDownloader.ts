@@ -54,6 +54,7 @@ class BuildDownloader {
     id: string;
     date: string;
     files: string[];
+    body: string;
   }): Promise<Build> {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
 
@@ -76,10 +77,16 @@ class BuildDownloader {
       files: rootFiles,
       date,
       id,
+      body: rootBody,
     } = rootinfo ?? (await this.getRootInfo());
 
     build.id = id;
     build.date = new Date(date);
+
+    const globalEnv = Regexes.htmlGlobalEnv.exec(rootBody)?.[1] ?? "{}";
+    build.globalEnv = Function(
+      `return ${globalEnv.replace("Date.now()", '"Date.now()"')}`
+    )();
 
     // console.log(`[Downloader Main] Threads: ${this.maxThreads}`);
     // console.log(`[Downloader Main] Root Files: ${rootFiles.length}`);
@@ -141,7 +148,12 @@ class BuildDownloader {
     return results;
   }
 
-  async getRootInfo(): Promise<{ id: string; date: string; files: string[] }> {
+  async getRootInfo(): Promise<{
+    id: string;
+    date: string;
+    files: string[];
+    body: string;
+  }> {
     if (!cluster.isMainThread) throw new Error("Not main thread!");
 
     const files: string[] = [];
@@ -172,6 +184,7 @@ class BuildDownloader {
       id,
       date,
       files,
+      body,
     };
   }
 

@@ -16,6 +16,7 @@ export const Paths = {
 export const Regexes = {
   htmlScripts: /(?:<script\ssrc="\/assets\/([0-9a-f]{20,30}\.js)")/g,
   htmlStylesheets: /(?:href="\/assets\/([.0-9a-f]{20,30}\.css)")/g,
+  htmlGlobalEnv: /\bwindow\.GLOBAL_ENV\b\s*=\s*({.+?});/ms,
   htmlImages: /(?:url\(\/assets\/([a-f0-9]{32}\.(?:png|svg|jpe?g|woff))\))/g,
   wpLoaderModules: /({(?:[\de]+:"[0-9a-f]{20}",?\n?)+})(?:\[\w\]\+"\.js")/,
   resourceNames:

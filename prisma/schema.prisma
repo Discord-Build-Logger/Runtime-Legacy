@@ -32,6 +32,8 @@ model Build {
   files  File[]
   // Misc assets (images, videos, etc.)
   assets String[]
+
+  globalEnv Json
 }
 
 model File {

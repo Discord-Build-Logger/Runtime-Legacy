@@ -5,6 +5,8 @@ import { ReleaseChannel } from "./models/Build";
 
 const CHECK_INTERVAL = 5000;
 
+const active = new Map<ReleaseChannel, boolean>();
+
 async function run(branch: ReleaseChannel) {
   const downloader = new BuildDownloader(branch);
 
@@ -24,5 +26,11 @@ async function run(branch: ReleaseChannel) {
 }
 
 setInterval(() => {
-  run(ReleaseChannel.CANARY).catch(console.error);
+  if (active.get(ReleaseChannel.CANARY)) return;
+  active.set(ReleaseChannel.CANARY, true);
+  run(ReleaseChannel.CANARY)
+    .catch(console.error)
+    .finally(() => {
+      active.set(ReleaseChannel.CANARY, false);
+    });
 }, CHECK_INTERVAL);

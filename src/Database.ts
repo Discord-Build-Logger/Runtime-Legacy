@@ -23,6 +23,7 @@ export async function createBuild(build: Build) {
       buildEnv: BuildEnv[build.buildEnv],
       date: build.date,
       assets: build.assets,
+      globalEnv: build.globalEnv,
       files: {
         connectOrCreate: build.files.map((file) => ({
           where: { name: file.fileName },
