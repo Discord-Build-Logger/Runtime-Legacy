@@ -8,7 +8,7 @@ const CHECK_INTERVAL = 5000;
 const active = new Map<ReleaseChannel, boolean>();
 
 async function run(branch: ReleaseChannel) {
-  const downloader = new BuildDownloader(branch);
+  const downloader = new BuildDownloader(branch, { saveToDisk: true });
 
   const rootInfo = await downloader.getRootInfo().catch(console.error);
   if (!rootInfo) return;

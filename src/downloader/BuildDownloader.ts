@@ -1,8 +1,9 @@
 import { StaticPool } from "node-worker-threads-pool";
+import fs, { writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import cluster from "node:worker_threads";
-import { Domains, Paths, Regexes } from "../Constants";
+import { BLOBS_DIR, Domains, Paths, Regexes } from "../Constants";
 import Build, { BuildEnv, ReleaseChannel } from "../models/Build";
 import File from "../models/File";
 import PromiseQueue from "./PromiseQueue";
@@ -13,6 +14,11 @@ import PromiseQueue from "./PromiseQueue";
 interface BuildDownloaderConfig {
   /** Will use all available threads by default. */
   maxThreads?: number;
+  /**
+   * Save downloaded files to disk.
+   * @default false
+   */
+  saveToDisk?: boolean;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -23,6 +29,7 @@ type ThreadPoolFn = (param: {
 }) => Promise<File>;
 
 class BuildDownloader {
+  private saveToDisk = false;
   private maxThreads: number;
   private downloadQueue = new PromiseQueue({ concurrency: 32 });
   private downloadRetryAttempts = 5;
@@ -48,6 +55,11 @@ class BuildDownloader {
       size: this.maxThreads,
       task: path.join(__dirname, "Worker"),
     });
+
+    if (config?.saveToDisk) {
+      this.saveToDisk = true;
+      if (!fs.existsSync(BLOBS_DIR)) fs.mkdirSync(BLOBS_DIR);
+    }
   }
 
   async start(rootinfo?: {
@@ -241,6 +253,12 @@ class BuildDownloader {
     }
 
     this.downloadResults[file].text = data.replace("\n", "");
+
+    if (this.saveToDisk) {
+      // download to "builds" folder
+      const location = path.join(__dirname, "..", "..", "blobs", file);
+      writeFileSync(location, data);
+    }
   }
 }
 
