@@ -160,7 +160,7 @@ class BuildDownloader {
     return results;
   }
 
-  async getRootInfo(): Promise<{
+  async getRootInfo(opts?: { id?: string }): Promise<{
     id: string;
     date: string;
     files: string[];
@@ -170,7 +170,24 @@ class BuildDownloader {
 
     const files: string[] = [];
 
-    const response = await fetch(`${Domains[this.releaseChannel]}${Paths.app}`);
+    if (opts?.id) {
+      if (!process.env.INTERNAL_BUILD_GRABBER_URL)
+        throw new Error("INTERNAL_BUILD_GRABBER_URL not set!");
+      if (!process.env.INTERNAL_BUILD_GRABBER_AUTH)
+        throw new Error("INTERNAL_BUILD_GRABBER_AUTH not set!");
+    }
+
+    let url: URL;
+
+    if (opts?.id) {
+      url = new URL(process.env.INTERNAL_BUILD_GRABBER_URL!);
+      url.searchParams.set("auth", process.env.INTERNAL_BUILD_GRABBER_AUTH!);
+      url.searchParams.set("hash", opts.id);
+    } else {
+      url = new URL(`${Domains[this.releaseChannel]}${Paths.app}`);
+    }
+
+    const response = await fetch(url.toString());
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
