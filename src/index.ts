@@ -5,6 +5,7 @@ import BuildDownloader from "./downloader/BuildDownloader";
 import { ReleaseChannel } from "./models/Build";
 
 const USE_RABBITMQ = process.env.USE_RABBITMQ ? true : false;
+const SAVE_TO_DISK = process.env.SAVE_TO_DISK ? true : false;
 
 const queue = "tasks";
 let conn: amqplib.Channel;
@@ -28,7 +29,7 @@ const CHECK_INTERVAL = parseInt(process.env.CHECK_INTERVAL ?? "5000");
 const active = new Map<ReleaseChannel, boolean>();
 
 async function run(branch: ReleaseChannel) {
-  const downloader = new BuildDownloader(branch, { saveToDisk: true });
+  const downloader = new BuildDownloader(branch, { saveToDisk: SAVE_TO_DISK });
 
   const rootInfo = await downloader.getRootInfo().catch(console.error);
   if (!rootInfo) return;
