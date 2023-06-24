@@ -28,9 +28,7 @@ const CHECK_INTERVAL = parseInt(process.env.CHECK_INTERVAL ?? "5000");
 
 const active = new Map<ReleaseChannel, boolean>();
 
-async function run(branch: ReleaseChannel) {
-  const downloader = new BuildDownloader(branch, { saveToDisk: SAVE_TO_DISK });
-
+async function run(branch: ReleaseChannel, downloader: BuildDownloader) {
   const rootInfo = await downloader.getRootInfo().catch(console.error);
   if (!rootInfo) return;
 
@@ -61,6 +59,7 @@ async function main() {
     const id = msg.content.toString();
     if (!/^[a-z0-9]+$/i.test(id)) {
       console.log("Invalid build id");
+      downloader.threadPool.destroy();
       return conn.ack(msg);
     }
 
@@ -68,12 +67,20 @@ async function main() {
     if (!rootInfo) return conn.ack(msg);
 
     const buildExists = await getBuildById(rootInfo.id).catch(console.error);
-    if (buildExists) return conn.ack(msg);
+    if (buildExists) {
+      downloader.threadPool.destroy();
+      return conn.ack(msg);
+    }
 
     console.log(`[CANARY]: Starting build ${rootInfo.id}...`);
 
     const build = await downloader.start(rootInfo).catch(console.error);
-    if (!build) return conn.ack(msg);
+    if (!build) {
+      downloader.threadPool.destroy();
+      return conn.ack(msg);
+    }
+
+    downloader.threadPool.destroy();
 
     const newBuild = await createBuild(build).catch(console.error);
     if (newBuild) console.log(`[CANARY]: Finished build ${rootInfo.id}...`);
@@ -86,10 +93,14 @@ async function main() {
 setInterval(() => {
   if (active.get(ReleaseChannel.CANARY)) return;
   active.set(ReleaseChannel.CANARY, true);
-  run(ReleaseChannel.CANARY)
+  const downloader = new BuildDownloader(ReleaseChannel.CANARY, {
+    saveToDisk: SAVE_TO_DISK,
+  });
+  run(ReleaseChannel.CANARY, downloader)
     .catch(console.error)
     .finally(() => {
       active.set(ReleaseChannel.CANARY, false);
+      downloader.threadPool.destroy();
     });
 }, CHECK_INTERVAL);
 

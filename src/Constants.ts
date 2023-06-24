@@ -1,7 +1,7 @@
 import path from "node:path";
 import { ReleaseChannel } from "./models/Build";
 
-export const BLOBS_DIR = path.join(__dirname, "..", "blobs");
+export const BLOBS_DIR = path.join(process.cwd(), "blobs");
 
 export const Domains = {
   [ReleaseChannel.STABLE]: "https://discord.com",

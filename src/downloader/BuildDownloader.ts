@@ -34,7 +34,7 @@ class BuildDownloader {
   private downloadQueue = new PromiseQueue({ concurrency: 32 });
   private downloadRetryAttempts = 5;
   private downloadRetryDelay = 2000;
-  private threadPool: StaticPool<ThreadPoolFn, any>;
+  public threadPool: StaticPool<ThreadPoolFn, any>;
 
   private handledFiles: string[] = [];
 
@@ -53,7 +53,7 @@ class BuildDownloader {
 
     this.threadPool = new StaticPool({
       size: this.maxThreads,
-      task: path.join(__dirname, "Worker"),
+      task: path.join(process.cwd(), "src", "downloader", "Worker"),
     });
 
     if (config?.saveToDisk) {
@@ -128,7 +128,7 @@ class BuildDownloader {
     const promises = files.map(async (file) => {
       const result = await this.threadPool
         .createExecutor()
-        .setTimeout(10_000)
+        .setTimeout(15_000)
         .exec({
           fileName: file,
           fileMeta: this.downloadResults[file],
